@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-19
+
 ### Fixed
 - `repository.url` in `package.json` now uses the canonical `git+https://` prefix — suppresses npm publish warning
 
