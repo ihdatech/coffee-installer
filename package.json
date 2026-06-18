@@ -32,6 +32,10 @@
   "engines": {
     "node": ">=18"
   },
+  "scripts": {
+    "test": "node --test",
+    "prepublishOnly": "npm test"
+  },
   "files": [
     "index.js",
     "core.js",
