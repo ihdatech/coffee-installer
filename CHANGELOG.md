@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-19
+
 ### Added
 - `coffee diff <name>` — preview what `coffee install` would do without writing any files; shows `+ add`, `~ overwrite`, `= skip` per file; respects config copy rules or falls back to convention scan
 
