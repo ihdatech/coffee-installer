@@ -1,13 +1,26 @@
 # coffee-installer
 
-`coffee-installer` is a CLI for copying files from your private **coffee collection** into any project with a single command.
+[![npm version](https://img.shields.io/npm/v/coffee-installer)](https://www.npmjs.com/package/coffee-installer)
+[![npm downloads](https://img.shields.io/npm/dm/coffee-installer)](https://www.npmjs.com/package/coffee-installer)
+[![license](https://img.shields.io/npm/l/coffee-installer)](LICENSE)
+[![node](https://img.shields.io/node/v/coffee-installer)](package.json)
+[![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
 
-A **coffee collection** is a folder you own — it holds credentials, config files, keystores, `.env` files, IDE settings, and any other files you reuse across projects. `coffee-installer` reads from that folder and copies the right files into whichever project you're working in.
+**Stop copying the same config files into every new project.**
+
+`coffee-installer` lets you keep keystores, `.env` files, IDE settings, credentials, and any files you reuse across projects in one place — your **coffee collection** — and install them into any project with a single command.
 
 ```bash
-cd your-project
 coffee install my-app
 ```
+
+---
+
+## Why
+
+Every new project starts the same way: hunt for the `.env` file from the last project, find the Android keystore, copy the VS Code settings, remember where you put the Firebase credentials...
+
+`coffee-installer` solves this by keeping all those files in a local collection folder and giving you a fast CLI to install, preview, and sync them.
 
 ---
 
@@ -17,7 +30,45 @@ coffee install my-app
 npm install -g coffee-installer
 ```
 
-Both `coffee-installer` and `coffee` are registered as CLI commands after install.
+Both `coffee` and `coffee-installer` are registered as CLI commands.
+
+---
+
+## Demo
+
+```
+$ coffee list
+Coffee Collection — ~/.coffee-collection
+
+Config-defined projects:
+  my-app     ~/.coffee.config.json
+  backend    ~/.coffee.config.json
+
+Folders in collection:
+  .agents    (symlink)
+  .vscode    (symlink)
+  my-app     (config + convention)
+```
+
+```
+$ coffee diff my-app
+Diff — my-app (config)
+
+  + add         android/key.properties
+  + add         android/app/keystore.jks
+  = skip        frontend/.env.development.local
+
+2 to add, 0 to overwrite, 1 to skip
+```
+
+```
+$ coffee install my-app
+📦 Installing my-app...
+  ✅ copied android/key.properties
+  ✅ copied android/app/keystore.jks
+  ⏭️  skip   frontend/.env.development.local (already exists)
+✅ my-app installed.
+```
 
 ---
 
@@ -27,14 +78,18 @@ Both `coffee-installer` and `coffee` are registered as CLI commands after instal
 # 1. Create your collection folder
 mkdir ~/.coffee-collection
 
-# 2. Point coffee-installer to it
+# 2. Configure the base source
 echo '{ "baseSource": "~/.coffee-collection" }' > ~/.coffee.config.json
 
-# 3. Add your files to the collection
+# 3. Add your files
 mkdir -p ~/.coffee-collection/my-app/android/app
 cp android/app/keystore.jks ~/.coffee-collection/my-app/android/app/
+cp android/key.properties   ~/.coffee-collection/my-app/android/
 
-# 4. Install into a project
+# 4. Preview before installing
+coffee diff my-app
+
+# 5. Install into a project
 cd your-project
 coffee install my-app
 ```
@@ -45,31 +100,21 @@ coffee install my-app
 
 | Command | Description |
 |---|---|
-| `coffee help` | Show available commands |
-| `coffee version` | Show installed CLI version |
-| `coffee config` | Show current base source and setup instructions |
-| `coffee list` | List all projects and folders in the collection |
-| `coffee diff <name>` | Preview what install would do — no files written |
-| `coffee pull <name>` | Copy files from the project back into the collection |
+| `coffee list` | Show all projects and folders in the collection |
+| `coffee diff <name>` | Preview what install would change — no files written |
 | `coffee install <name>` | Copy files from the collection into the current project |
+| `coffee pull <name>` | Sync files from the project back into the collection |
+| `coffee config` | Show base source path and setup instructions |
+| `coffee version` | Show installed version |
+| `coffee help` | Show all commands |
 
 ---
 
 ## Configuration
 
-`coffee-installer` needs to know where your collection lives. Configure it in one of three ways:
-
-### 1. Global user config (recommended)
+### Global config (recommended)
 
 Create `~/.coffee.config.json`:
-
-```json
-{
-  "baseSource": "~/.coffee-collection"
-}
-```
-
-You can also define install rules here so they apply across all projects:
 
 ```json
 {
@@ -78,20 +123,20 @@ You can also define install rules here so they apply across all projects:
     "my-app": {
       "source": "my-app",
       "copy": [
-        { "from": "android/key.properties", "to": "android/key.properties", "copyIfMissing": true },
-        { "from": "android/app/keystore.jks", "to": "android/app/keystore.jks", "copyIfMissing": true },
-        { "from": "frontend/.env.development.local", "to": "frontend/.env.development.local", "copyIfMissing": true }
+        { "from": "android/key.properties",          "copyIfMissing": true },
+        { "from": "android/app/keystore.jks",        "copyIfMissing": true },
+        { "from": "frontend/.env.development.local", "copyIfMissing": true }
       ]
     }
   }
 }
 ```
 
-### 2. Per-project config
+### Per-project config
 
-Create `coffee.config.json` in the project root when a project needs its own rules or a different collection path.
+Create `coffee.config.json` in the project root for project-specific rules or a different collection path.
 
-### 3. Environment variable
+### Environment variable
 
 ```bash
 export BASE_SOURCE=~/.coffee-collection
@@ -103,35 +148,35 @@ export BASE_SOURCE=~/.coffee-collection
 
 ## Copy rule options
 
-| Field | Type | Description |
-|---|---|---|
-| `from` | string | Path relative to the project's folder in the collection |
-| `to` | string | Path relative to cwd. Defaults to `from` |
-| `copyIfMissing` | boolean | Skip if the destination already exists |
-| `override` | boolean | Force-replace destination directory before copying |
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `from` | string | — | Path relative to the project folder in the collection |
+| `to` | string | same as `from` | Destination path relative to cwd |
+| `copyIfMissing` | boolean | `false` | Skip if destination already exists |
+| `override` | boolean | `false` | Force-replace destination directory |
 
 ---
 
 ## Install strategies
 
-When `coffee install <name>` is run, these strategies are tried in order:
+`coffee install <name>` tries these in order:
 
-1. **Config-based** — if `projects.<name>` is defined in any config, use its copy rules
-2. **Custom module** — if `install-<name>.js` exists in the CLI directory, load and run it
-3. **Convention** — if `<collection>/<name>/` exists, merge its contents into cwd (skips existing files)
-4. **Symlink** — if `<collection>/.<name>/` or `<collection>/<name>/` exists, create a symlink in cwd
+1. **Config-based** — use copy rules from config if `projects.<name>` is defined
+2. **Custom module** — load `install-<name>.js` from the CLI directory if it exists
+3. **Convention** — merge `<collection>/<name>/` into cwd, skipping existing files
+4. **Symlink** — symlink `<collection>/.<name>/` or `<collection>/<name>/` into cwd
 
-Hidden folders (`.tasks`, `.vscode`, `.agents`) are preferred over visible ones in the symlink strategy.
+Hidden folders (`.agents`, `.tasks`, `.vscode`) are preferred in the symlink strategy.
 
 ---
 
-## Collection structure example
+## Collection structure
 
 ```
 ~/.coffee-collection/
-  .agents/                      ← symlinked into projects as .agents
-  .tasks/                       ← symlinked into projects as .tasks
-  .vscode/                      ← symlinked into projects as .vscode
+  .agents/                      ← symlinked as .agents into every project
+  .tasks/                       ← symlinked as .tasks
+  .vscode/                      ← symlinked as .vscode
   my-app/
     android/
       key.properties
@@ -150,36 +195,16 @@ The collection is yours — `coffee-installer` only reads from it, never modifie
 
 ---
 
-## Architecture
-
-```
-coffee-installer/
-  index.js      ← CLI entry point, command router
-  core.js       ← all install logic and config resolution
-  docs/
-    setup-guide.md
-```
-
-### core.js sections
-
-| Section | Purpose |
-|---|---|
-| Config loaders | Parse `coffee.config.json` (cwd) and `~/.coffee.config.json` |
-| Module-level state | `config`, `globalConfig`, `BASE_SOURCE` — resolved once at startup |
-| Path helpers | `resolvePath`, `isSafeName`, `pathExistsOrSymlink` |
-| Output | `showHelp`, `showVersion`, `showConfigHelp` |
-| Install strategies | `installFromConfig`, `installProjectByConvention`, `installFolder`, `copyMerge` |
-
----
-
 ## Security
 
-- Project and folder names are validated — only alphanumeric, `.`, `_`, `-` allowed. Path traversal is rejected.
-- File operations are wrapped in try/catch — errors are reported clearly.
-- No local paths are hardcoded in the package.
+- Names are validated — only alphanumeric, `.`, `_`, `-` allowed. Path traversal is rejected.
+- No shell commands are constructed from user input.
+- No paths are hardcoded.
 
 ---
 
 ## See Also
 
 - [Setup Guide](docs/setup-guide.md) — first-time configuration walkthrough
+- [Changelog](https://github.com/ihdatech/coffee-installer/blob/main/CHANGELOG.md)
+- [Roadmap](https://github.com/ihdatech/coffee-installer/blob/main/ROADMAP.md)
