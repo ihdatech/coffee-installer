@@ -123,9 +123,11 @@ export function showHelp() {
     console.log("  help       Show available commands");
     console.log("  version    Show installed CLI version");
     console.log("  config     Show setup and alias instructions");
+    console.log("  list       List projects and folders in the collection");
     console.log("  install    Install a configured project or folder");
     console.log("");
     console.log("Examples:");
+    console.log("  coffee-installer list");
     console.log("  coffee-installer install template-app");
     console.log("  coffee install my-project");
 }
@@ -153,6 +155,93 @@ function showBaseSourceSetupMessage() {
     console.error("Base source is not configured.");
     console.error("");
     console.error("Run `coffee-installer config` for setup instructions.");
+}
+
+/**
+ * Collect all project names defined across cwd config and global config,
+ * returning a map of projectName → config file label.
+ * @returns {Map<string, string>}
+ */
+function collectConfigProjects() {
+    const entries = new Map();
+    const label = (cfg, path) => {
+        if (!cfg?.projects) return;
+        for (const name of Object.keys(cfg.projects)) {
+            if (!entries.has(name)) entries.set(name, path);
+        }
+    };
+    label(config, "coffee.config.json");
+    label(globalConfig, "~/.coffee.config.json");
+    return entries;
+}
+
+/**
+ * Read the top-level entries of BASE_SOURCE, returning visible and hidden folders
+ * separately. Files at the top level are ignored.
+ * @returns {{ visible: string[], hidden: string[] }}
+ */
+function readCollectionFolders() {
+    if (!BASE_SOURCE || !existsSync(BASE_SOURCE)) return { visible: [], hidden: [] };
+    const visible = [];
+    const hidden = [];
+    for (const item of readdirSync(BASE_SOURCE)) {
+        const fullPath = join(BASE_SOURCE, item);
+        try {
+            if (!lstatSync(fullPath).isDirectory()) continue;
+        } catch {
+            continue;
+        }
+        if (item.startsWith(".")) {
+            hidden.push(item);
+        } else {
+            visible.push(item);
+        }
+    }
+    visible.sort();
+    hidden.sort();
+    return { visible, hidden };
+}
+
+export function showList() {
+    if (!BASE_SOURCE) {
+        showBaseSourceSetupMessage();
+        return;
+    }
+
+    const displaySource = BASE_SOURCE.startsWith(process.env.HOME)
+        ? "~" + BASE_SOURCE.slice(process.env.HOME.length)
+        : BASE_SOURCE;
+
+    console.log(`Coffee Collection — ${displaySource}`);
+
+    const configProjects = collectConfigProjects();
+    if (configProjects.size > 0) {
+        console.log("");
+        console.log("Config-defined projects:");
+        const nameWidth = Math.max(...[...configProjects.keys()].map((k) => k.length));
+        for (const [name, source] of configProjects) {
+            console.log(`  ${name.padEnd(nameWidth)}  ${source}`);
+        }
+    }
+
+    const { visible, hidden } = readCollectionFolders();
+    if (visible.length > 0 || hidden.length > 0) {
+        console.log("");
+        console.log("Folders in collection:");
+        for (const folder of hidden) {
+            console.log(`  ${folder}  (symlink)`);
+        }
+        for (const folder of visible) {
+            const tag = configProjects.has(folder) ? "(config + convention)" : "(convention)";
+            console.log(`  ${folder}  ${tag}`);
+        }
+    }
+
+    if (configProjects.size === 0 && visible.length === 0 && hidden.length === 0) {
+        console.log("");
+        console.log("Collection is empty.");
+        console.log(`Add folders to ${displaySource} or define projects in a config file.`);
+    }
 }
 
 // ─── Guards ───────────────────────────────────────────────────────────────────

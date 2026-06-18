@@ -13,6 +13,7 @@ import {
     installProjectByConvention,
     showConfigHelp,
     showHelp,
+    showList,
     showVersion,
 } from "./core.js";
 
@@ -39,6 +40,11 @@ if (command === "version" || command === "--version" || command === "-v") {
 
 if (command === "config") {
     showConfigHelp();
+    process.exit(0);
+}
+
+if (command === "list") {
+    showList();
     process.exit(0);
 }
 
