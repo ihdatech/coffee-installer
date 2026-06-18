@@ -45,7 +45,7 @@ Status legend: `[x]` done · `[ ]` planned · `[-]` in progress
 
 ## v1.2.0 — Inspection
 
-- [ ] `coffee diff <name>` — compare files in the current project against the collection before installing; show which would be added, skipped, or overwritten
+- [x] `coffee diff <name>` — compare files in the current project against the collection before installing; show which would be added, skipped, or overwritten
   - Scope: read-only. No files are written.
   - Output format: one line per file — `+ add`, `~ overwrite`, `= skip`
   - Respects config copy rules if a project is defined in config; falls back to convention scan

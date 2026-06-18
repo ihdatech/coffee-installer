@@ -124,10 +124,12 @@ export function showHelp() {
     console.log("  version    Show installed CLI version");
     console.log("  config     Show setup and alias instructions");
     console.log("  list       List projects and folders in the collection");
+    console.log("  diff       Preview what install would do — no files written");
     console.log("  install    Install a configured project or folder");
     console.log("");
     console.log("Examples:");
     console.log("  coffee-installer list");
+    console.log("  coffee-installer diff my-app");
     console.log("  coffee-installer install template-app");
     console.log("  coffee install my-project");
 }
@@ -242,6 +244,115 @@ export function showList() {
         console.log("Collection is empty.");
         console.log(`Add folders to ${displaySource} or define projects in a config file.`);
     }
+}
+
+// ─── Diff ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Recursively walk src and compare each file against dest, accumulating counts.
+ * @param {string} src
+ * @param {string} dest
+ * @param {string} prefix
+ * @param {{ adds: number, overwrites: number, skips: number }} counts
+ */
+function diffDir(src, dest, prefix, counts) {
+    if (!existsSync(src)) return;
+    for (const item of readdirSync(src)) {
+        const srcPath = join(src, item);
+        const destPath = join(dest, item);
+        const label = prefix ? `${prefix}/${item}` : item;
+        if (statSync(srcPath).isDirectory()) {
+            diffDir(srcPath, destPath, label, counts);
+        } else if (existsSync(destPath)) {
+            console.log(`  ~ overwrite  ${label}`);
+            counts.overwrites++;
+        } else {
+            console.log(`  + add        ${label}`);
+            counts.adds++;
+        }
+    }
+}
+
+/**
+ * @param {string} projectName
+ * @param {object} activeConfig
+ * @returns {boolean}
+ */
+function diffFromConfig(projectName, activeConfig) {
+    const project = activeConfig.projects[projectName];
+    const sourceRoot = join(BASE_SOURCE, project.source || projectName);
+    if (!existsSync(sourceRoot)) {
+        console.error(`Source not found: ${sourceRoot}`);
+        return false;
+    }
+    const rules = project.copy || [];
+    if (!rules.length) {
+        console.error(`No copy rules defined for "${projectName}".`);
+        return false;
+    }
+    console.log(`Diff — ${projectName} (config)`);
+    console.log("");
+    let adds = 0, overwrites = 0, skips = 0;
+    for (const rule of rules) {
+        const relFrom = rule.from || rule.path;
+        const relTo = rule.to || relFrom;
+        const src = join(sourceRoot, relFrom);
+        const dest = join(TARGET, relTo);
+        if (!existsSync(src)) {
+            console.log(`  ? missing     ${relFrom} (not in collection)`);
+            continue;
+        }
+        if (existsSync(dest) && rule.copyIfMissing) {
+            console.log(`  = skip        ${relTo}`);
+            skips++;
+        } else if (existsSync(dest)) {
+            console.log(`  ~ overwrite   ${relTo}`);
+            overwrites++;
+        } else {
+            console.log(`  + add         ${relTo}`);
+            adds++;
+        }
+    }
+    console.log("");
+    console.log(`${adds} to add, ${overwrites} to overwrite, ${skips} to skip`);
+    return true;
+}
+
+/**
+ * @param {string} projectName
+ * @returns {boolean}
+ */
+function diffByConvention(projectName) {
+    const source = join(BASE_SOURCE, projectName);
+    if (!existsSync(source) || !statSync(source).isDirectory()) return false;
+    console.log(`Diff — ${projectName} (convention)`);
+    console.log("");
+    const counts = { adds: 0, overwrites: 0, skips: 0 };
+    diffDir(source, TARGET, "", counts);
+    console.log("");
+    console.log(`${counts.adds} to add, ${counts.overwrites} to overwrite, ${counts.skips} to skip`);
+    return true;
+}
+
+/**
+ * Preview what coffee install would do — no files are written.
+ * @param {string} projectName
+ * @returns {boolean}
+ */
+export function showDiff(projectName) {
+    if (!isSafeName(projectName)) {
+        console.error(`Invalid project name: "${projectName}"`);
+        return false;
+    }
+    if (!ensureBaseSourceConfigured()) return false;
+    const activeConfig =
+        (config?.projects?.[projectName] ? config : null) ||
+        (globalConfig?.projects?.[projectName] ? globalConfig : null);
+    if (activeConfig) return diffFromConfig(projectName, activeConfig);
+    if (diffByConvention(projectName)) return true;
+    console.error(`Project "${projectName}" not found in config or collection.`);
+    console.error(`Run \`coffee list\` to see available projects.`);
+    return false;
 }
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
