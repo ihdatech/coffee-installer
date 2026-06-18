@@ -6,10 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-19
+
 ### Added
 - `coffee list` command — shows config-defined projects and collection folders with source labels and install type hints (`symlink` / `convention` / `config + convention`)
 - `prepublishOnly` script — blocks `npm publish` if tests fail
-- `CLAUDE.md` — development standards (tech stack, workflow, branching, commits, PR, code style, release)
+- `watch` script — `node --test --watch` for active development
+- `package-lock.json` — enables `npm audit` in the release flow
+- `CLAUDE.md` — full development standards (tech stack, npm conventions, architecture, workflow, branching, commits, PR, code review, release, code style, hooks, testing, security)
 - `ROADMAP.md` — feature plan with version targets and implementation status
 
 ### Changed
@@ -20,6 +24,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Remove internal-only functions from public API (`loadCoffeeConfig`, `loadGlobalCoffeeConfig`, `showBaseSourceSetupMessage`)
 - Register `coffee` as a bin alias in `package.json` — no manual alias setup required
 - `installFromConfig` now reads `projects` from `~/.coffee.config.json` in addition to cwd config
+- `package.json` field order follows canonical order defined in CLAUDE.md
 - `docs/setup-guide.md` — added Step 5 (`coffee list`) before the install step
 
 ### Fixed
