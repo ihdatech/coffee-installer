@@ -1,4 +1,5 @@
 import { readFileSync, existsSync, mkdirSync, copyFileSync, readdirSync, statSync, lstatSync, rmSync, symlinkSync, realpathSync } from "fs";
+import { createInterface } from "readline";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -125,6 +126,7 @@ export function showHelp() {
     console.log("  config     Show setup and alias instructions");
     console.log("  list       List projects and folders in the collection");
     console.log("  diff       Preview what install would do — no files written");
+    console.log("  pull       Copy files from the project back into the collection");
     console.log("  install    Install a configured project or folder");
     console.log("");
     console.log("Examples:");
@@ -353,6 +355,100 @@ export function showDiff(projectName) {
     console.error(`Project "${projectName}" not found in config or collection.`);
     console.error(`Run \`coffee list\` to see available projects.`);
     return false;
+}
+
+// ─── Pull ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Ask a yes/no question on stdin. Returns true if user answers "y".
+ * @param {string} question
+ * @returns {Promise<boolean>}
+ */
+function confirm(question) {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    return new Promise((resolve) => {
+        rl.question(question, (answer) => {
+            rl.close();
+            resolve(answer.trim().toLowerCase() === "y");
+        });
+    });
+}
+
+/**
+ * Copy files from the current project back into the collection (reverse of install).
+ * Only supports config-based projects — copy rules are required to know the destination.
+ * @param {string} projectName
+ * @param {boolean} force - skip confirmation when overwriting collection files
+ * @returns {Promise<boolean>}
+ */
+export async function pullToCollection(projectName, force = false) {
+    if (!isSafeName(projectName)) {
+        console.error(`Invalid project name: "${projectName}"`);
+        return false;
+    }
+    if (!ensureBaseSourceConfigured()) return false;
+
+    const activeConfig =
+        (config?.projects?.[projectName] ? config : null) ||
+        (globalConfig?.projects?.[projectName] ? globalConfig : null);
+
+    if (!activeConfig?.projects?.[projectName]) {
+        console.error(`No config rules found for "${projectName}".`);
+        console.error(`coffee pull only supports config-based projects.`);
+        return false;
+    }
+
+    const project = activeConfig.projects[projectName];
+    const destRoot = join(BASE_SOURCE, project.source || projectName);
+    const rules = project.copy || [];
+
+    if (!rules.length) {
+        console.error(`No copy rules defined for "${projectName}".`);
+        return false;
+    }
+
+    const wouldOverwrite = rules.filter((rule) => {
+        const src = join(TARGET, rule.to || rule.from);
+        const dest = join(destRoot, rule.from);
+        return existsSync(src) && existsSync(dest);
+    });
+
+    if (wouldOverwrite.length > 0 && !force) {
+        console.log(`${wouldOverwrite.length} file(s) in the collection would be overwritten:`);
+        for (const rule of wouldOverwrite) {
+            console.log(`  ${rule.from}`);
+        }
+        console.log("");
+        const ok = await confirm("Overwrite? [y/N] ");
+        if (!ok) {
+            console.log("Aborted.");
+            return false;
+        }
+    }
+
+    console.log(`📦 Pulling ${projectName} to collection...`);
+    for (const rule of rules) {
+        const relFrom = rule.from || rule.path;
+        const relTo = rule.to || relFrom;
+        const src = join(TARGET, relTo);
+        const dest = join(destRoot, relFrom);
+
+        if (!existsSync(src)) {
+            console.log(`  ⏭️  skip   ${relTo} (not in project)`);
+            continue;
+        }
+        try {
+            mkdirSync(dirname(dest), { recursive: true });
+            copyFileSync(src, dest);
+            console.log(`  📄 pulled ${relTo}`);
+        } catch (e) {
+            console.error(`  ❌ failed ${relTo}: ${e.message}`);
+            return false;
+        }
+    }
+
+    console.log(`✅ ${projectName} pulled to collection.`);
+    return true;
 }
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
