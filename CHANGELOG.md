@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+- README redesigned — added npm/license/node/zero-deps badges, terminal demo output, clearer value proposition, and links to CHANGELOG and ROADMAP
+
 ### Added
 - `coffee pull <name>` — copy files from the current project back into the collection (reverse of `install`); prompts confirmation before overwriting collection files; supports `--force` to skip confirmation
 
