@@ -7,14 +7,14 @@ All development, code review, and automation must follow the rules below.
 
 ## Tech Stack
 
-| Concern        | Choice                                          |
-|----------------|-------------------------------------------------|
-| Runtime        | Node.js ≥ 18 (LTS)                             |
-| Module system  | ES Modules (`"type": "module"` in package.json) |
-| Dependencies   | **Zero** — Node.js stdlib only                  |
-| Test runner    | `node:test` + `node:assert` (built-in)          |
-| Package manager| npm ≥ 9                                         |
-| Registry       | npmjs.com (public)                              |
+| Concern         | Choice                                          |
+|-----------------|-------------------------------------------------|
+| Runtime         | Node.js ≥ 18 (LTS)                             |
+| Module system   | ES Modules (`"type": "module"` in package.json) |
+| Dependencies    | **Zero** — Node.js stdlib only                  |
+| Test runner     | `node:test` + `node:assert` (built-in)          |
+| Package manager | npm ≥ 9                                         |
+| Registry        | npmjs.com (public)                              |
 
 **Never add runtime dependencies.** If a feature cannot be built with Node.js stdlib, reconsider the feature scope.
 
@@ -64,8 +64,6 @@ Never publish: `CLAUDE.md`, `CHANGELOG.md`, `test/`, `.gitignore`, `.npmrc`.
 
 ### `exports` field — programmatic API
 
-Use `exports` to control what consumers can `import` when using `coffee-installer` as a library:
-
 ```json
 "exports": {
   ".": "./core.js"
@@ -87,17 +85,17 @@ Both commands point to the same entry. `index.js` must have `#!/usr/bin/env node
 
 ### npm scripts
 
-| Script           | Command                   | Purpose                                      |
-|------------------|---------------------------|----------------------------------------------|
-| `test`           | `node --test`             | Run test suite                               |
-| `prepublishOnly` | `npm test`                | Block publish if tests fail                  |
-| `version`        | `node scripts/version.js` | Auto-update CHANGELOG on `npm version` (future) |
+| Script           | Command                   | Purpose                                           |
+|------------------|---------------------------|---------------------------------------------------|
+| `test`           | `node --test`             | Run test suite                                    |
+| `prepublishOnly` | `npm test`                | Block publish if tests fail                       |
+| `version`        | `node scripts/version.js` | Auto-update CHANGELOG on `npm version` (future)   |
 
 Lifecycle order on `npm publish`: `prepublishOnly` → pack → upload.
 
 ### Verify before publish
 
-Before every release, run `npm pack --dry-run` to confirm that only the intended files are included. Unexpected inclusions (`.env`, secrets, test fixtures) must be blocked by updating `files`.
+Before every release, run `npm pack --dry-run` to confirm that only the intended files are included.
 
 ---
 
@@ -112,67 +110,108 @@ coffee-installer/
 ├── index.js              # CLI entry point (bin) — routes commands, calls process.exit()
 ├── core.js               # Library entry point (exports) — all business logic as named exports
 ├── test/                 # Test suites (excluded from npm publish via `files`)
-│   └── core.test.js
-├── docs/                 # User-facing docs — published to npm + served via GitHub Pages
+│   └── core.test.js      # (planned — not yet created)
+├── docs/                 # User-facing docs — published to npm
 │   └── setup-guide.md
-├── .gitignore            # Files ignored by Git
+├── .gitignore
 ├── CHANGELOG.md          # Keep-a-Changelog format (not published)
 ├── CLAUDE.md             # Dev standards — this file (not published)
 ├── LICENSE               # Published
 ├── README.md             # Package documentation — published
-└── package.json          # Package metadata and entry definitions (always published)
+└── package.json
 ```
 
 ### Layer rules
 
-| Layer | File | `package.json` field | May call `process.exit`? |
-|-------|------|-----------------------|--------------------------|
-| CLI | `index.js` | `bin` | Yes — only place allowed |
-| Library | `core.js` | `exports["."]` | Never |
-
-### Development lifecycle
-
-```
-watch → test → pack (dry-run) → publish
-```
-
-| Stage | Command | When |
-|-------|---------|------|
-| Develop | `node --test --watch` | Active development — re-runs tests on save |
-| Verify | `npm test` | Before every commit |
-| Inspect | `npm pack --dry-run` | Before every release — confirm published file list |
-| Release | `npm version` + `npm publish` | After CHANGELOG updated on `main` |
+| Layer   | File       | `package.json` field | May call `process.exit`? |
+|---------|------------|----------------------|--------------------------|
+| CLI     | `index.js` | `bin`                | Yes — only place allowed |
+| Library | `core.js`  | `exports["."]`       | Never                    |
 
 ### Rules
 
 - `index.js` only routes CLI commands and calls `process.exit()`. Zero business logic.
 - `core.js` holds all logic. Every public function is a named export.
-- Module-level side effects in `core.js` are limited to config loading (`loadCoffeeConfig`, `loadGlobalCoffeeConfig`) and `BASE_SOURCE` resolution.
-- `docs/` contains only user-facing documentation; it is also the GitHub Pages source (served from `/docs` on `main`). No internal design docs.
+- Module-level side effects in `core.js` are limited to config loading and `BASE_SOURCE` resolution.
+- `docs/` contains only user-facing documentation. No internal design docs.
 - No `src/`, `lib/`, or `dist/` directories — no build step, source files live at the root.
 - Test files live in `test/` and are excluded from the published package via `files`.
-- Published surface must stay minimal. Run `npm pack --dry-run` and verify the file list before every release.
 
 ---
 
-## Branching Strategy
+## Development Workflow
 
-| Branch pattern    | Purpose                                    |
-|-------------------|--------------------------------------------|
-| `main`            | Always releasable. Direct commits blocked. |
-| `feat/<slug>`     | New user-facing feature                    |
-| `fix/<slug>`      | Bug fix                                    |
-| `chore/<slug>`    | Tooling, scripts, config, dep updates      |
-| `docs/<slug>`     | Documentation-only change                  |
-| `refactor/<slug>` | Internal rewrite, no behavior change       |
+Every change follows this sequence — no skipping steps:
 
-### Rules
+```
+Issue → Branch → Commit(s) → PR (Draft → Ready) → Review → Merge → Cleanup → (Release)
+```
 
-- Always branch from `main`, always merge back to `main` via PR.
-- Delete feature branches after merge.
-- `<slug>` is kebab-case, max 4 words. Example: `feat/coffee-list`.
-- Never commit directly to `main`.
+### 1. Create an issue first
+
+Create a GitHub issue **before starting any work** — feature, bug, or tech debt.
+
+| Situation                    | Create issue?                                    |
+|------------------------------|--------------------------------------------------|
+| New feature from ROADMAP     | Yes — before branching                           |
+| Bug discovered               | Yes — immediately                                |
+| Tech debt from ROADMAP       | Yes — before branching                           |
+| Critical hotfix              | Optional — PR with a full description is enough  |
+
+**Issue title:** follows Conventional Commits format — `feat: coffee diff command`
+
+**Issue body:**
+```markdown
+## Problem / Goal
+[What the problem is or what needs to be built]
+
+## Proposed solution
+[Approach to take]
+
+## References
+- ROADMAP.md: vX.Y.Z
+```
+
+### 2. Branch from main
+
+After the issue is open, create a branch that references the issue number:
+
+```bash
+git checkout main && git pull
+git checkout -b feat/<issue-number>-<slug>
+# example: feat/3-coffee-diff
+```
+
+A `PreToolUse` hook blocks `Edit`/`Write` when on `main` to enforce this locally.
+
+### Branch naming
+
+| Branch pattern            | Purpose                                      |
+|---------------------------|----------------------------------------------|
+| `main`                    | Always releasable. Direct commits blocked.   |
+| `feat/<issue>-<slug>`     | New user-facing feature                      |
+| `fix/<issue>-<slug>`      | Bug fix                                      |
+| `chore/<slug>`            | Tooling, config — no issue required          |
+| `docs/<slug>`             | Documentation-only change                    |
+| `refactor/<issue>-<slug>` | Internal rewrite, no behavior change         |
+
+- `<slug>` is kebab-case, max 4 words.
+- Delete branches after merge.
 - Release tags (`v1.2.0`) are created by `npm version`, not by hand.
+
+### Keeping a branch up-to-date
+
+If `main` advances while you are on a feature branch, use **rebase** (not merge):
+
+```bash
+git fetch origin
+git rebase origin/main
+```
+
+- Rebase keeps history linear and clean in the PR.
+- Resolve conflicts per-commit, then `git rebase --continue`.
+- Never use `git merge main` on a feature branch — it produces unnecessary merge commits.
+- After rebase, push with force-with-lease: `git push --force-with-lease`.
 
 ---
 
@@ -190,15 +229,15 @@ Format: **Conventional Commits**
 
 ### Types
 
-| Type       | When to use                                          |
-|------------|------------------------------------------------------|
-| `feat`     | New command or user-visible behavior                 |
-| `fix`      | Bug fix                                              |
-| `docs`     | README, CHANGELOG, `docs/` — no code change          |
-| `chore`    | `package.json`, `.gitignore`, tooling — no src change|
-| `refactor` | Internal rewrite with identical external behavior    |
-| `test`     | Adding or updating tests                             |
-| `perf`     | Measurable performance improvement                   |
+| Type       | When to use                                           |
+|------------|-------------------------------------------------------|
+| `feat`     | New command or user-visible behavior                  |
+| `fix`      | Bug fix                                               |
+| `docs`     | README, CHANGELOG, `docs/` — no code change           |
+| `chore`    | `package.json`, `.gitignore`, tooling — no src change |
+| `refactor` | Internal rewrite with identical external behavior     |
+| `test`     | Adding or updating tests                              |
+| `perf`     | Measurable performance improvement                    |
 
 ### Rules
 
@@ -206,6 +245,7 @@ Format: **Conventional Commits**
 - Body: explain motivation or constraint, not the diff. Omit when obvious.
 - One logical change per commit.
 - Breaking changes: `BREAKING CHANGE:` footer + `!` after type (`feat!`).
+- Footer must include `Closes #<issue-number>`.
 
 ### Examples
 
@@ -220,6 +260,20 @@ test(core): add unit tests for isSafeName
 ---
 
 ## Pull Request Convention
+
+### Draft PR
+
+Open a PR as **Draft** when work is in progress but you want early feedback or visibility:
+
+```bash
+gh pr create --draft --title "<type>(<scope>): <description>" --base main --body "..."
+```
+
+Convert to Ready for Review after all checklist items are met:
+
+```bash
+gh pr ready
+```
 
 ### Title
 
@@ -238,15 +292,120 @@ Why this is needed or what problem it solves.
 - [ ] Manual: <scenario 1>
 - [ ] Manual: <scenario 2>
 - [ ] `npm test` passes
-- [ ] `npm pack --dry-run` output looks correct
+- [ ] `npm pack --dry-run` output is correct
+- [ ] `CHANGELOG.md` updated under [Unreleased]
+- [ ] `ROADMAP.md` status updated
+- [ ] `docs/setup-guide.md` updated if a command or install behavior changed
+
+Closes #<issue-number>
 ```
 
 ### Rules
 
 - One feature or fix per PR. Do not bundle unrelated changes.
-- All checklist items must be verified before requesting review.
+- Use Draft PR for WIP — never leave a Ready PR in an unfinished state.
+- All checklist items must be verified before converting Draft → Ready.
 - `CHANGELOG.md` updated under `[Unreleased]` in the same PR.
+- `ROADMAP.md` status updated in the same PR.
+- `docs/setup-guide.md` updated if a new command or install behavior changed.
+- Commit footer must include `Closes #<issue-number>`.
 - No merge with failing tests.
+
+---
+
+## Code Review
+
+Every PR must be reviewed before merging, even on a solo project.
+
+### Reviewer checklist
+
+**Correctness**
+- [ ] Logic matches the issue description
+- [ ] Edge cases handled (missing path, empty config, invalid name)
+- [ ] No `process.exit()` outside `index.js`
+- [ ] No new runtime dependencies added
+
+**Style**
+- [ ] Naming follows conventions in this document
+- [ ] No comments that explain WHAT (only WHY is allowed)
+- [ ] New functions ≤ 40 lines; if longer, split into named helpers
+
+**Documentation**
+- [ ] `CHANGELOG.md` updated under `[Unreleased]`
+- [ ] `ROADMAP.md` status updated
+- [ ] `README.md` updated if a new command or behavior was added
+- [ ] `docs/setup-guide.md` updated if a new command or install behavior changed
+
+**Security**
+- [ ] User input passes through `isSafeName()` before any file operation
+- [ ] No hardcoded absolute paths
+
+### Merge strategy
+
+Use **Squash and merge** for feature branches with many small commits.
+Use **Merge commit** when each commit is clean and logically self-contained.
+
+Delete the branch after merge — GitHub provides a "Delete branch" button automatically.
+
+---
+
+## Post-merge Cleanup
+
+After a PR is merged, run locally:
+
+```bash
+git checkout main
+git pull
+git branch -d <branch>       # delete local branch
+git remote prune origin      # clean up stale remote tracking refs
+```
+
+---
+
+## Release Flow
+
+Not every PR triggers a release. Batch multiple PRs into one version unless a critical bug fix is needed.
+
+### When to release
+
+| Condition                                    | Action                          |
+|----------------------------------------------|---------------------------------|
+| Critical bug on `main`                       | Release `patch` immediately     |
+| 1–3 small features accumulated in `[Unreleased]` | Release `minor`             |
+| Breaking change                              | Release `major` — plan first    |
+
+### Release steps
+
+```bash
+# 1. Ensure main is clean and tests pass
+git checkout main && git pull && npm test
+
+# 2. Security audit — zero high/critical vulnerabilities allowed
+npm audit
+
+# 3. Update CHANGELOG.md — move [Unreleased] to [x.y.z] - YYYY-MM-DD
+
+# 4. Bump version (automatically creates a commit and git tag)
+npm version patch   # or minor / major
+
+# 5. Verify publish surface
+npm pack --dry-run
+
+# 6. Publish to npm registry
+npm publish
+
+# 7. Push commit and tag
+git push && git push --tags
+
+# 8. Create GitHub Release
+gh release create v$(node -p "require('./package.json').version") \
+  --title "v$(node -p "require('./package.json').version")" \
+  --notes "$(sed -n '/^## \[/,/^## \[/p' CHANGELOG.md | head -n -1)"
+```
+
+`npm version` automatically bumps `package.json`, creates a commit, and creates a `vX.Y.Z` git tag. Never bump the version manually.
+
+GitHub Release is the official release page on the repo — different from a git tag. Users see it on the Releases tab for downloads and release notes.
 
 ---
 
@@ -262,13 +421,13 @@ Why this is needed or what problem it solves.
 
 ### Naming
 
-| Thing       | Convention                           | Example              |
-|-------------|--------------------------------------|----------------------|
-| Functions   | camelCase                            | `installFromConfig`  |
-| Variables   | camelCase                            | `sourceRoot`         |
-| Constants   | SCREAMING_SNAKE for exported env-like constants | `BASE_SOURCE` |
-| Files       | kebab-case                           | `setup-guide.md`     |
-| npm scripts | kebab-case                           | `prepublishOnly`     |
+| Thing       | Convention                                              | Example              |
+|-------------|---------------------------------------------------------|----------------------|
+| Functions   | camelCase                                               | `installFromConfig`  |
+| Variables   | camelCase                                               | `sourceRoot`         |
+| Constants   | SCREAMING_SNAKE for exported env-like constants         | `BASE_SOURCE`        |
+| Files       | kebab-case                                              | `setup-guide.md`     |
+| npm scripts | kebab-case                                              | `prepublishOnly`     |
 
 ### Imports
 
@@ -286,14 +445,14 @@ Why this is needed or what problem it solves.
 
 ### CLI output format
 
-| Situation      | Prefix | Stream         |
-|----------------|--------|----------------|
-| Install start  | `📦`   | `console.log`  |
-| File copied    | `📄`   | `console.log`  |
-| Success        | `✅`   | `console.log`  |
-| Skipped        | `⏭️`  | `console.log`  |
-| Error/failure  | `❌`   | `console.error`|
-| Warning        | `⚠️`  | `console.error`|
+| Situation     | Prefix | Stream         |
+|---------------|--------|----------------|
+| Install start | `📦`   | `console.log`  |
+| File copied   | `📄`   | `console.log`  |
+| Success       | `✅`   | `console.log`  |
+| Skipped       | `⏭️`  | `console.log`  |
+| Error/failure | `❌`   | `console.error`|
+| Warning       | `⚠️`  | `console.error`|
 
 No ANSI color codes. No chalk or similar packages.
 
@@ -301,16 +460,17 @@ No ANSI color codes. No chalk or similar packages.
 
 ## Claude Code Hooks
 
-Project hooks are defined in `.claude/settings.json`. The `.claude/` directory is gitignored — each contributor sets up their own hooks locally.
+Project hooks live in `.claude/settings.json`. The `.claude/` directory is gitignored — each contributor sets up their own hooks locally.
 
-Recommended hooks to configure:
+### Recommended hooks
 
-| Event | Trigger | Behavior |
-|-------|---------|----------|
-| `PostToolUse` | Edit or Write a `.js` file | Injects a reminder into Claude's context to update `CHANGELOG.md` and `ROADMAP.md` before finishing |
-| `Stop` | Claude session ends | Checks `git diff` for unstaged `.js` changes; if `CHANGELOG.md` and `ROADMAP.md` were not also updated, shows a warning message to the user |
+| Event        | Matcher        | Behavior                                                                                          |
+|--------------|----------------|---------------------------------------------------------------------------------------------------|
+| `PreToolUse` | `Edit\|Write`  | Blocks the edit if the current branch is `main` — enforces the branching rule                    |
+| `PostToolUse`| `Edit\|Write`  | Injects a reminder to update `CHANGELOG.md` and `ROADMAP.md` when a `.js` file is edited        |
+| `Stop`       | —              | Checks `git diff` for unstaged `.js` changes; warns if `CHANGELOG.md`/`ROADMAP.md` were not updated |
 
-Copy the hook config from a teammate or recreate it locally — it does not live in the repo.
+Copy the config from a teammate or recreate it locally — it does not live in the repo.
 
 ---
 
@@ -319,46 +479,9 @@ Copy the hook config from a teammate or recreate it locally — it does not live
 - Tests live in `test/` (excluded from npm publish via `files`).
 - File naming: `<module>.test.js` — example: `core.test.js`.
 - Use `node:test` and `node:assert` only. No test framework dependencies.
-- Run: `npm test` (which runs `node --test`).
+- Run: `npm test` (runs `node --test`).
 - Each public export in `core.js` must have at least one test.
 - Tests must not write outside `os.tmpdir()`. Clean up temp files in `after()`.
-
----
-
-## Versioning & Release
-
-This project follows **Semantic Versioning** and **Keep a Changelog**.
-
-### Bump rules
-
-| Change type                        | Bump    |
-|------------------------------------|---------|
-| New command or user-visible feature | `minor` |
-| Bug fix                            | `patch` |
-| Removed command or breaking config change | `major` |
-
-### Release steps
-
-```bash
-# 1. Ensure main is clean and tests pass
-git checkout main && npm test
-
-# 2. Update CHANGELOG.md — move [Unreleased] to [x.y.z] - YYYY-MM-DD
-
-# 3. Bump version (also creates a git tag automatically)
-npm version patch   # or minor / major
-
-# 4. Verify the publish surface
-npm pack --dry-run
-
-# 5. Publish to npm registry
-npm publish
-
-# 6. Push commit and tag
-git push && git push --tags
-```
-
-`npm version` automatically: bumps `package.json`, creates a commit, and creates a `vX.Y.Z` git tag. Never bump the version manually in `package.json`.
 
 ---
 
