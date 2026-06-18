@@ -11,17 +11,20 @@
     "project-setup",
     "developer-tools"
   ],
-  "type": "module",
+  "homepage": "https://github.com/ihdatech/coffee-installer#readme",
+  "bugs": {
+    "url": "https://github.com/ihdatech/coffee-installer/issues"
+  },
   "license": "MIT",
   "author": "ihdatech",
   "repository": {
     "type": "git",
     "url": "https://github.com/ihdatech/coffee-installer.git"
   },
-  "bugs": {
-    "url": "https://github.com/ihdatech/coffee-installer/issues"
+  "type": "module",
+  "engines": {
+    "node": ">=18"
   },
-  "homepage": "https://github.com/ihdatech/coffee-installer#readme",
   "bin": {
     "coffee-installer": "index.js",
     "coffee": "index.js"
@@ -29,18 +32,16 @@
   "exports": {
     ".": "./core.js"
   },
-  "engines": {
-    "node": ">=18"
-  },
-  "scripts": {
-    "test": "node --test",
-    "prepublishOnly": "npm test"
-  },
   "files": [
     "index.js",
     "core.js",
     "README.md",
     "LICENSE",
     "docs/setup-guide.md"
-  ]
+  ],
+  "scripts": {
+    "test": "node --test",
+    "watch": "node --test --watch",
+    "prepublishOnly": "npm test"
+  }
 }
