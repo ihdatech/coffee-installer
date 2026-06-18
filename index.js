@@ -12,6 +12,7 @@ import {
     installFromConfig,
     installProjectByConvention,
     showConfigHelp,
+    showDiff,
     showHelp,
     showList,
     showVersion,
@@ -46,6 +47,17 @@ if (command === "config") {
 if (command === "list") {
     showList();
     process.exit(0);
+}
+
+if (command === "diff") {
+    if (!subcommand) {
+        fail("Missing project name. Usage: coffee diff <name>");
+    }
+    if (!ensureBaseSourceConfigured()) {
+        process.exit(1);
+    }
+    const ok = showDiff(subcommand);
+    process.exit(ok ? 0 : 1);
 }
 
 if (command === "install") {

@@ -146,7 +146,35 @@ Folders in collection:
 
 ---
 
-## Step 6 — Install a project
+## Step 6 — Preview before installing
+
+Before committing to an install, you can preview exactly what would happen:
+
+```bash
+coffee diff my-project
+```
+
+Expected output:
+
+```
+Diff — my-project (config)
+
+  + add         android/key.properties
+  ~ overwrite   android/app/keystore.jks
+  = skip        frontend/.env.development.local
+
+2 to add, 1 to overwrite, 1 to skip
+```
+
+- `+ add` — file does not exist in the project; will be copied
+- `~ overwrite` — file already exists; will be replaced
+- `= skip` — file already exists and the rule has `copyIfMissing: true`; will not be touched
+
+`coffee diff` never writes any files. It is safe to run at any time.
+
+---
+
+## Step 7 — Install a project
 
 ```bash
 cd your-project
