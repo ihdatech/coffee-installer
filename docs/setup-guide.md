@@ -116,7 +116,37 @@ Current base source: /home/you/.coffee-collection
 
 ---
 
-## Step 5 — Install a project
+## Step 5 — Explore your collection
+
+Before installing, you can see what is available in your collection:
+
+```bash
+coffee list
+```
+
+Expected output:
+
+```
+Coffee Collection — ~/.coffee-collection
+
+Config-defined projects:
+  my-project   ~/.coffee.config.json
+
+Folders in collection:
+  .agents      (symlink)
+  .vscode      (symlink)
+  my-project   (config + convention)
+```
+
+- **Config-defined projects** — projects with explicit copy rules in a config file.
+- **Folders in collection** — top-level directories found in `baseSource`:
+  - `(symlink)` — hidden folders (e.g. `.agents`) that will be symlinked into the project.
+  - `(convention)` — visible folders that will be merged into cwd by convention.
+  - `(config + convention)` — visible folders that also have config rules defined.
+
+---
+
+## Step 6 — Install a project
 
 ```bash
 cd your-project
