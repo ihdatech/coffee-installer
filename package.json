@@ -19,7 +19,7 @@
   "author": "ihdatech",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ihdatech/coffee-installer.git"
+    "url": "git+https://github.com/ihdatech/coffee-installer.git"
   },
   "type": "module",
   "engines": {
