@@ -1,0 +1,17 @@
+# Environment
+.env
+.env.*
+
+# Config (local overrides)
+*.config.json
+
+# IDE
+.idea/
+.vscode/
+
+# Agent / task configs
+.agents/
+.tasks/
+
+# macOS
+.DS_Store

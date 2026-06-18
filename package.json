@@ -1,0 +1,42 @@
+{
+  "name": "coffee-installer",
+  "version": "1.0.0",
+  "description": "CLI engine for installing collection-based project scaffolding and utility folders",
+  "keywords": [
+    "coffee",
+    "cli",
+    "installer",
+    "scaffold",
+    "template",
+    "project-setup",
+    "developer-tools"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "author": "ihdatech",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ihdatech/coffee-installer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ihdatech/coffee-installer/issues"
+  },
+  "homepage": "https://github.com/ihdatech/coffee-installer#readme",
+  "bin": {
+    "coffee-installer": "index.js",
+    "coffee": "index.js"
+  },
+  "exports": {
+    ".": "./core.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "index.js",
+    "core.js",
+    "README.md",
+    "LICENSE",
+    "docs/setup-guide.md"
+  ]
+}
