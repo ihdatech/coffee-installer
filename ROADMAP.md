@@ -20,10 +20,26 @@ Status legend: `[x]` done · `[ ]` planned · `[-]` in progress
 
 ## v1.1.0 — Discovery
 
+**Features**
 - [x] `coffee list` — list config-defined projects and collection folders with type hints (`symlink` / `convention` / `config + convention`)
+
+**npm package**
 - [x] `prepublishOnly` script — blocks `npm publish` if tests fail
-- [x] `CLAUDE.md` — development standards document (tech stack, branching, commits, PR, code style, release)
-- [x] `ROADMAP.md` — this file
+- [x] `watch` script — `node --test --watch` for active development
+- [x] `package-lock.json` — enables `npm audit` in release flow
+- [x] `package.json` field order — follows canonical order defined in CLAUDE.md
+
+**Documentation**
+- [x] `CLAUDE.md` — full development standards (tech stack, npm conventions, architecture, workflow, branching, commits, PR, code review, release, code style, hooks, testing, security)
+- [x] `ROADMAP.md` — feature plan with version targets and implementation status
+- [x] `docs/setup-guide.md` — added `coffee list` as Step 5 before install
+- [x] `CHANGELOG.md` — standardized with Keep a Changelog format header and complete entries
+
+**Repository configuration**
+- [x] GitHub branch protection on `main` — force push and deletion blocked
+- [x] GitHub merge strategy — squash merge and merge commit enabled; rebase merge disabled
+- [x] Auto-delete branch on merge enabled
+- [x] Claude Code hooks documented in CLAUDE.md (`PreToolUse`, `PostToolUse`, `Stop`)
 
 ---
 
