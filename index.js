@@ -11,6 +11,7 @@ import {
     installFolder,
     installFromConfig,
     installProjectByConvention,
+    pullToCollection,
     showConfigHelp,
     showDiff,
     showHelp,
@@ -47,6 +48,18 @@ if (command === "config") {
 if (command === "list") {
     showList();
     process.exit(0);
+}
+
+if (command === "pull") {
+    if (!subcommand) {
+        fail("Missing project name. Usage: coffee pull <name>");
+    }
+    if (!ensureBaseSourceConfigured()) {
+        process.exit(1);
+    }
+    const force = args.includes("--force");
+    const ok = await pullToCollection(subcommand, force);
+    process.exit(ok ? 0 : 1);
 }
 
 if (command === "diff") {
