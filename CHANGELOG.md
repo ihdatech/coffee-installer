@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `coffee list` command — shows config-defined projects and folders available in the collection, with source labels and install type hints (symlink / convention / config + convention)
+
 ### Changed
 - Rename `utils.js` to `core.js` for clarity
 - Convert codebase to ES modules (`import`/`export`)

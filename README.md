@@ -48,6 +48,7 @@ coffee install my-app
 | `coffee help` | Show available commands |
 | `coffee version` | Show installed CLI version |
 | `coffee config` | Show current base source and setup instructions |
+| `coffee list` | List all projects and folders in the collection |
 | `coffee install <name>` | Copy files from the collection into the current project |
 
 ---
