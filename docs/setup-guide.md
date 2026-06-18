@@ -174,7 +174,35 @@ Diff — my-project (config)
 
 ---
 
-## Step 7 — Install a project
+## Step 7 — Sync changes back to collection
+
+After editing files in your project, you can push them back into the collection:
+
+```bash
+coffee pull my-project
+```
+
+If any collection files would be overwritten, you will be asked to confirm:
+
+```
+2 file(s) in the collection would be overwritten:
+  android/key.properties
+  android/app/keystore.jks
+
+Overwrite? [y/N]
+```
+
+To skip confirmation:
+
+```bash
+coffee pull my-project --force
+```
+
+`coffee pull` only supports config-based projects — copy rules are required to know where each file belongs in the collection.
+
+---
+
+## Step 8 — Install a project
 
 ```bash
 cd your-project

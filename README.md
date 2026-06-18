@@ -50,6 +50,7 @@ coffee install my-app
 | `coffee config` | Show current base source and setup instructions |
 | `coffee list` | List all projects and folders in the collection |
 | `coffee diff <name>` | Preview what install would do — no files written |
+| `coffee pull <name>` | Copy files from the project back into the collection |
 | `coffee install <name>` | Copy files from the collection into the current project |
 
 ---

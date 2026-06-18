@@ -54,7 +54,7 @@ Status legend: `[x]` done · `[ ]` planned · `[-]` in progress
 
 ## v1.3.0 — Sync back
 
-- [ ] `coffee pull <name>` — copy files from the current project back into the collection (reverse of `install`)
+- [x] `coffee pull <name>` — copy files from the current project back into the collection (reverse of `install`)
   - Requires project to have copy rules defined in config (`from`/`to` pairs)
   - Prompts confirmation if a collection file would be overwritten (unless `--force` is passed)
   - Only supports config-based projects — convention folders are not pulled back (no rules to infer destination)
